@@ -23,6 +23,7 @@ const Appointment = () => {
           'authorization':`Bearer ${token}`
         }
       })
+      console.log(response)
       if(!response.ok){
         const errorData = await response.json();
           throw new Error(errorData.message || 'Failed to fetch data');
@@ -127,7 +128,7 @@ const Appointment = () => {
       <p className=' pb-3 mt-12 font-medium text-zinc-700 border-b' >My Appointments</p>
       <div>
         {
-          appointments.slice(0,4).map((item)=>(
+          appointments.map((item)=>(
             <div className=' grid grid-cols-[1rf_3fr] gap-4 sm:flex sm:gap-6 py-2 border-b ' key={item._id}>
               <div>
                 <img className='w-32  bg-indigo-50' src={item.docData.image} alt="" />
@@ -142,10 +143,13 @@ const Appointment = () => {
               </div>
               <div></div>
               <div className=' flex flex-col gap-2 justify-end'>
-               {!item.cancelled && <button onClick={()=>Payment(item._id)} className=' text-sm  text-center sm:min-w-48 py-2 border hover:bg-primary text-black transition-all duration-300'>Pay Online</button>} 
-               {!item.cancelled && <button onClick={()=>cancelAppointment(item._id)} className=' text-sm  text-center sm:min-w-48 py-2 border hover:bg-red-700 text-black transition-all duration-300'>Cancel Appointment</button>}
-               {item.cancelled && <button className=' sm:min-w-48 py-2 border border-red-500 rounded text-red-500 '>Appointment Cancelled</button>} 
+               {!item.cancelled && !item.isCompleted && <button onClick={()=>Payment(item._id)} className=' text-sm  text-center sm:min-w-48 py-2 border hover:bg-primary text-black transition-all duration-300'>Pay Online</button>} 
+               {!item.cancelled && !item.isCompleted && <button onClick={()=>cancelAppointment(item._id)} className=' text-sm  text-center sm:min-w-48 py-2 border hover:bg-red-700 text-black transition-all duration-300'>Cancel Appointment</button>}
+               {item.cancelled &&  !item.isCompleted &&<button className=' sm:min-w-48 py-2 border border-red-500 rounded text-red-500 '>Appointment Cancelled</button>} 
               </div>
+              {
+                item.isCompleted && <button className=' sm:min-w-48 py-2 border border-gray-500 rounded text-green-500'>Completed</button>
+              }
             </div>
           ))
         }

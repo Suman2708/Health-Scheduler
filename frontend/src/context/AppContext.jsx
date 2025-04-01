@@ -37,7 +37,7 @@ const AppContextProvider = (props) => {
 
         const data=await response .json();
         setDoctors(data)
-        console.log(doctors)
+        // console.log(doctors)
 
 
       } catch (error) {

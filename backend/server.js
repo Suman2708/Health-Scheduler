@@ -14,8 +14,8 @@ const port = process.env.PORT || 3000;
 connectdb();
 connectCloudinary();
 
-app.use(express.json());
-// app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+// app.use(cors({ origin: '*' }));
 
 const corsOption = {
     origin: ['http://localhost:52','http://localhost:51'],

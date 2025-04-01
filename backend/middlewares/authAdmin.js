@@ -1,13 +1,13 @@
 // import jwt from 'jsonwebtoken'
 
-// Admin authentication middleware
+// // Admin authentication middleware
 
 // const authAdmin=async(req,res,next)=>{
 //     try {
         
-//       const {atoken}=req.headers
-//       // const authHeader = req.headers["authorization"];
-//       //   const atoken = authHeader && authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : authHeader;
+//       // const {atoken}=req.headers
+//       const authHeader = req.headers["authorization"];
+//         const atoken = authHeader && authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : authHeader;
 
 //       if(!atoken){
 //         return res.json({success:false,message:"Not authorized login Again"})

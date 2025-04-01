@@ -178,6 +178,7 @@ const adminDashboard=async(req,res)=>{
         const doctors= await doctorModel.find({})
         const users= await userModel.find({})
         const appointments= await appointmentModel.find({})
+        // console.log(appointments)
 
         const dashData={
             doctors:doctors.length,
@@ -185,7 +186,7 @@ const adminDashboard=async(req,res)=>{
             appointments:appointments.length,
             latestAppointments:appointments.reverse().slice(0,5)
         }
-        console.log(dashData.latestAppointments)
+        // console.log(dashData.latestAppointments)
         res.json({success:true,dashData})
     } catch (error) {
         console.error("Error retrieving doctors:", error);

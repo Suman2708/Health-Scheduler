@@ -8,7 +8,8 @@ const AdminContextProvider=(props)=>{
 
 const [aToken,setAToken]= useState(localStorage.getItem('aToken')?localStorage.getItem('aToken'):'')
 const [doctors,setDoctors]=useState([])
-const [dashData,setDashData]=useState([])
+const [dashdata,setDashData]=useState([])
+const [appointments,setAppointment]=useState([]);
 
 const backendUrl=import.meta.env.VITE_BACKEND_URL
 
@@ -65,38 +66,136 @@ const changeAvailability=async(docId)=>{
             toast.error('Not Authorized')
         }
         const data=await response.json();
-        getDoctors()
-        console.log(data)
+        if(data.success){
+            toast.success(data.message)
+            getDoctors()
+        }
+        else{
+            toast.error(data.message)
+        }
+       
+        // console.log(data)
 
     } catch (error) {
         toast.error(error.message)
     }
 }
 
-
-const getDashData=async()=>{
+const getDashData = async () => {
     try {
-        const response=await fetch(`${backendUrl}/api/admin/dashboard`,{
-
-            method:'GET',
-            headers:{
+        const response = await fetch(`${backendUrl}/api/admin/dashboard`, {
+            method: 'GET',
+            headers: {
                 'Content-Type': 'application/json',
-                'Authorization':`Bearer ${aToken}`
-            },  
-        })
-        if(!response.ok){
-            toast.error('Not Authorized')
-        }
-        const data=await response.json();
-        if(data.success){
-            setDashData(data.dashData)
-        }
-        else{
-            toast.error(data.message)
+                'Authorization': `Bearer ${aToken}`
+            },
+        });
+
+        if (!response.ok) {
+            toast.error('Not Authorized');
+            return;
         }
 
+        const data = await response.json();
+        console.log("Fetched Dashboard Data:", data);
+
+        if (data.success) {
+            setDashData(data.dashData);
+            localStorage.setItem("dashdata", JSON.stringify(data.dashData));  // Store data in localStorage
+        } else {
+            toast.error(data.message);
+        }
     } catch (error) {
-        toast.error(error.message)
+        toast.error(error.message);
+    }
+};
+
+// const getDashData=async()=>{
+//     try {
+//         const response=await fetch(`${backendUrl}/api/admin/dashboard`,{
+
+//             method:'GET',
+//             headers:{
+//                 'Content-Type': 'application/json',
+//                 'Authorization':`Bearer ${aToken}`
+//             },  
+//         })
+//         if(!response.ok){
+//             toast.error('Not Authorized')
+//         }
+//         const data=await response.json();
+//         console.log(data)
+//         if(data.success){
+//             setDashData(data.dashData)
+           
+//         }
+//         else{
+//             toast.error(data.message)
+//         }
+
+//     } catch (error) {
+//         toast.error(error.message)
+//     }
+// }
+
+
+
+
+
+const fetchAppointments = async () => {
+  try {
+    const response = await fetch(`${backendUrl}/api/admin/allappointment`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${aToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      return toast.error("Not Authorized");
+    }
+
+    const data = await response.json();
+    // console.log("Fetched data:", data); // ✅ Check API response
+
+    setAppointment(data.allAppointment) 
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    toast.error(error.message);
+  }
+};
+
+
+const cancelled=async(appointmentId)=>{
+    try {
+      
+      const response = await fetch(`${backendUrl}/api/admin/cancel-appointment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${aToken}`,
+        },
+        body:JSON.stringify({appointmentId})
+      });
+
+      if (!response.ok) {
+        return toast.error("Not Authorized");
+      }
+
+      const data = await response.json(); 
+      console.log(data)
+      if(data.success){
+        toast.success(data.message)
+       fetchAppointments()
+      }
+
+      else{
+        toast.error(data.message)
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast.error(error.message);
     }
 }
 
@@ -104,7 +203,8 @@ const getDashData=async()=>{
     const value={
         aToken,setAToken,
         backendUrl ,doctors,
-        getDoctors,changeAvailability,getDashData,dashData
+        getDoctors,changeAvailability,getDashData,dashdata,
+        appointments,cancelled,fetchAppointments,setDashData
     }
 
     return(

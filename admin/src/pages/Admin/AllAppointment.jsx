@@ -7,70 +7,45 @@ import { assets } from '../../assets/assets';
 
 const AllAppointment = () => {
 
-const {backendUrl,aToken}=useContext(AdminContext);
+const {aToken,appointments,fetchAppointments,cancelled}=useContext(AdminContext);
 const {calculateAge,slotDateFormat,currency}=useContext(AppContext)
 
-const [appointments,setAppointment]=useState([]);
-
-
-const fetchAppointments = async () => {
-  try {
-    const response = await fetch(`${backendUrl}/api/admin/allappointment`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${aToken}`,
-      },
-    });
-
-    if (!response.ok) {
-      return toast.error("Not Authorized");
-    }
-
-    const data = await response.json();
-    // console.log("Fetched data:", data); // ✅ Check API response
-
-    setAppointment(data.allAppointment) 
-  } catch (error) {
-    console.error("Error fetching data:", error);
-    toast.error(error.message);
-  }
-};
 
 
 
 
-const cancelled=async(appointmentId)=>{
-    try {
+
+// const cancelled=async(appointmentId)=>{
+//     try {
       
-      const response = await fetch(`${backendUrl}/api/admin/cancel-appointment`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${aToken}`,
-        },
-        body:JSON.stringify({appointmentId})
-      });
+//       const response = await fetch(`${backendUrl}/api/admin/cancel-appointment`, {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${aToken}`,
+//         },
+//         body:JSON.stringify({appointmentId})
+//       });
 
-      if (!response.ok) {
-        return toast.error("Not Authorized");
-      }
+//       if (!response.ok) {
+//         return toast.error("Not Authorized");
+//       }
 
-      const data = await response.json(); 
-      console.log(data)
-      if(data.success){
-        toast.success(data.message)
-       fetchAppointments()
-      }
+//       const data = await response.json(); 
+//       console.log(data)
+//       if(data.success){
+//         toast.success(data.message)
+//        fetchAppointments()
+//       }
 
-      else{
-        toast.error(data.message)
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      toast.error(error.message);
-    }
-}
+//       else{
+//         toast.error(data.message)
+//       }
+//     } catch (error) {
+//       console.error("Error fetching data:", error);
+//       toast.error(error.message);
+//     }
+// }
 
 
 
@@ -140,7 +115,7 @@ useEffect(() => {
                   </div>
                   <p>{currency}{item.amount} </p>
                   {item.cancelled ? <p className=' text-red-400 text-xs font-medium'>Cancelled</p>
-                  :<img onClick={()=>cancelled(item._id)} className='w-10 cursor-pointer' src={assets.cancel_icon} alt="" />
+                  : item.isCompleted ? <p className=' text-green-500 text-xs font-medium'>Completed</p>: <img onClick={()=>cancelled(item._id)} className='w-10 cursor-pointer' src={assets.cancel_icon} alt="" />
                    }
                   
                 </div>

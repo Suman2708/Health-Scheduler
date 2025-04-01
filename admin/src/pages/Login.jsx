@@ -1,6 +1,7 @@
 import  { useContext, useState } from 'react'
 import { AdminContext } from '../context/adminContext'
 import { toast } from 'react-toastify'
+import { DoctorContext } from '../context/doctorContext'
 
 
 const Login = () => {
@@ -8,6 +9,7 @@ const Login = () => {
     const [email,setEmail]=useState('')
     const [password,setPassword]=useState('')
     const {setAToken,backendUrl}=useContext(AdminContext)
+    const {setDToken}=useContext(DoctorContext)
 
     const handler = async (event) => {
       event.preventDefault();
@@ -22,7 +24,6 @@ const Login = () => {
           });
 
           if (!response.ok) {
-            // If the response is not successful, throw an error
             const errorData = await response.json();
             throw new Error(errorData.message || 'Login failed');
           }
@@ -39,7 +40,35 @@ const Login = () => {
               toast.error(data.message)
           }
         } else {
-          console.log(backendUrl);
+
+          try {
+            
+            const response= await fetch(`${backendUrl}/api/doctor/login`,{
+                method:'POST',
+                headers:{
+                    'Content-Type':'Application/json',
+                },
+                body:JSON.stringify({email,password})
+            })
+
+            if(!response.ok){
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Login failed');
+            }
+            const data= await response.json();
+            if (data.success) {
+                localStorage.setItem('dToken', data.token);
+                setDToken(data.token);
+                toast.success('Login Successful')
+                console.log(data.token);
+              }
+              else{
+                  toast.error(data.message)
+              }
+        } catch (error) {
+            toast.error(error.message)
+        }
+
         }
       } catch (error) {
         console.error('Error:', error);
