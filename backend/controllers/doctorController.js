@@ -264,6 +264,16 @@ const updateDoctor=async(req,res)=>{
     }
 }
 
+
+
+
+// ---------  Controller for  booking of the doctor by doctor personal assitant  ------------
+
+
+
+
+
+
 export {changeAvailability,doctorList,
     doctorLogin,appointmentsDoctor,
     completeAppointment,cancelAppointment,

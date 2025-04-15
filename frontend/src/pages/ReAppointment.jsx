@@ -13,39 +13,138 @@ const ReAppointment = () => {
 
       const [docInfo, setDocInfo] = useState({});
       const [currentIndex, setCurrentIndex] = useState(0);
-    // const [date, setDate] = useState("");
+      const [selectedDate, setSelectedDate] = useState(new Date());
+      const [slotTime, setSlotTime] = useState("");
     const [availableSlots, setAvailableSlots] = useState([]);
+    // const [unAvailableSlots,setUnAvailableSlots]=useState([]);
+    const [availableDates,setAvailableDates]= useState([]);
+    const [slotIndex, setSlotIndex] = useState(0);
     const navigate=useNavigate();
 
-    // const checkAppointment = async () => {
-    //     try {
-    //         const response = await axios.post("/book-appointment", { userId: 1, Id, appointmentDate: date });
-
-    //         if (response.data.availableSlots.length > 0) {
-    //             setAvailableSlots(response.data.availableSlots);
-    //         } else {
-    //             alert("No available slots. Please select another date.");
-    //         }
-    //     } catch (error) {
-    //         console.error(error);
-    //         alert("Error booking appointment");
-    //     }
-    // };
 
 
-
-    // const handleNext = () => {
-    //     if (currentIndex < availableSlots.length - 1) {
-    //       setCurrentIndex(currentIndex + 1);
-    //     }
-    //   };
+    const bookAppointment = async () => {
+      if (!token) {
+        toast.warn("Login to book an appointment");
+        return navigate("/login");
+      }
+      if (!slotTime) {
+        toast.warn("Please select a slot");
+        return;
+      }
+  
+      try {
+        const response = await fetch(`${backendUrl}/api/user/book-reappointment`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ docId: Id, slotDate: selectedDate, slotTime }),
+          
+        });
+  
+        const data = await response.json();
+        if (data.success) {
+          toast.success(data.message);
+          navigate("/appointment");
+        } else {
+          toast.error(data.message);
+        }
+      } catch (error) {
+        console.log(error);
+        toast.error(error.message);
+      }
+    };
     
-    //   const handlePrevious = () => {
-    //     if (currentIndex > 0) {
-    //       setCurrentIndex(currentIndex - 1);
-    //     }
-    //   };
 
+
+    const AvailableSlots = async (selectedDate) => {
+      // setDocSlots([]);
+//       let formattedDate;
+// if (typeof selectedDate === 'string') {
+//   formattedDate = selectedDate;
+// } else {
+//   let correctDate = new Date(selectedDate);
+//   correctDate.setMinutes(correctDate.getMinutes() - correctDate.getTimezoneOffset());
+//   formattedDate = correctDate.toISOString().split("T")[0];
+// }
+
+// console.log(formattedDate)
+    
+      // const fetchavailableSlots = async () => {
+        try {
+          const response = await fetch(`${backendUrl}/api/user/available-slots?docId=${Id}&date=${selectedDate}`, {  
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            }
+          });
+          
+          const data = await response.json();
+          // console.log(data)
+          if (data.success) {
+            setAvailableSlots(data.availableSlots);
+            console.log(availableSlots)
+            toast.success(data.message)
+            // console.log(data.slots)
+          } else {
+            console.error("Error fetching unavailable slots:", data.message);
+          }
+        } catch (error) {
+          console.error("API Error:", error);
+        }
+      // };
+    };
+    
+//     useEffect(() => {
+//       if (selectedDate) {
+//         let formattedDate;
+// if (typeof selectedDate === 'string') {
+//   formattedDate = selectedDate;
+// } else {
+//   let correctDate = new Date(selectedDate);
+//   correctDate.setMinutes(correctDate.getMinutes() - correctDate.getTimezoneOffset());
+//   formattedDate = correctDate.toISOString().split("T")[0];
+// }
+
+//         // Fetch unavailable slots from the backend
+//         const fetchUnavailableSlots = async () => {
+//           try {
+//             const response = await fetch(`${backendUrl}/api/user/slots-unavailable?docId=${Id}&date=${formattedDate}`, {
+//               method: "GET",
+//               headers: {
+//                 "Content-Type": "application/json",
+//                 'Authorization':`Bearer ${token}`
+//               }
+//             });
+    
+//             const data = await response.json();
+//             // console.log(data)
+//             if (data.success) {
+//               setUnAvailableSlots(data.slots || []);
+//               // console.log(data.slots)
+//             } else {
+//               console.error("Error fetching unavailable slots:", data.message);
+//             }
+//           } catch (error) {
+//             console.error("API Error:", error);
+//           }
+//         };
+//         // docSlots.filter(slot => !unAvailableSlots.includes(slot.time))
+    
+//         fetchUnavailableSlots();
+//       }
+//     }, [selectedDate]);
+
+
+      // useEffect(() => {
+      //   if (selectedDate) {
+      //     AvailableSlots(selectedDate);
+      //   }
+      // }, [selectedDate]);
+  
 
 
 
@@ -64,48 +163,55 @@ const ReAppointment = () => {
 
 
 
-    useEffect(()=>{
-        if(!token){
-            navigate('/login')
-            toast.warn('Please Login First')
-        }
+    useEffect(() => {
+      if (!token) {
+        navigate("/login");
+        toast.warn("Please Login First");
+      }
+    
+      const AvailableDates = async () => {
         try {
-            const againAppointment = async () => {
-              try {
-                const response = await fetch(`${backendUrl}/api/user/available-dates?docId=${Id}`, {
-                  method: "GET",
-                  headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                  }
-                });
-        
-                const data = await response.json();
-                // console.log(data)
-                if (data.success) {
-                  toast.success(data.message || "Click on Free Appointment to ReAppointment")
-                  setAvailableSlots(data.availableSlots)
-                  console.log(data.availableSlots)
-                } else {
-                    setAvailableSlots(data.availableSlots)
-                    console.log(data.availableSlots)
-                  toast.success( data.message)
-                  // console.error("Error fetching unavailable slots:", data.message);
-                }
-              } catch (error) {
-                console.error("API Error:", error);
-              }
-            };
-        
-            againAppointment();
-          } catch (error) {
-            console.log(error)
-          toast.error(error.message)
+          const response = await fetch(`${backendUrl}/api/user/available-dates?docId=${Id}`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+    
+          const data = await response.json();
+          if (data.success) {
+            toast.success(data.message || "Click on Free Appointment to ReAppointment");
+            setAvailableDates(data.availableDates); // Contains date + slots
+            // console.log(availableDates[0])
+          } else {
+            toast.error(data.message);
           }
-    },[])
+        } catch (error) {
+          console.error("API Error:", error);
+          toast.error("Something went wrong while fetching available dates.");
+        }
+      };
+    
+      AvailableDates();
+    }, []);
+    
 
 
-    const currentSlot = availableSlots[currentIndex] || { date: "N/A", slots: [] };
+    // const currentSlot = availableSlots[currentIndex] || { date: "N/A", slots: [] };
+    // setSelectedDate(currentSlot.date)
+
+
+
+    // useEffect(() => {
+    //   if (currentSlot.date !== "N/A") {
+    //     setSelectedDate(currentSlot.date);
+    //   }
+    // }, [currentSlot.date]);
+
+
+
+    
   return docInfo &&  (
     <div className="container mx-auto p-4">
             <div className="flex flex-col sm:flex-row gap-4">
@@ -150,24 +256,40 @@ const ReAppointment = () => {
      </div>
      </div>
 
-     <div className="p-4">
-      <h2 className="text-lg font-bold">Available Slots</h2>
+     <div className="p-4 mt-6 bg-white shadow-md rounded-xl">
+      <h2 className="text-lg font-bold mb-4">Available Slots</h2>
 
       {/* Display date */}
-      <p className="text-md font-semibold text-blue-600">
-        Date: {currentSlot.date}
-      </p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3" >
+        {
+          availableDates.length>0? (
+            availableDates.map((date,index)=>(
+              <button 
+                key={index}
+                className="mb-6 border-b pb-4"
+                onClick={()=>{setSelectedDate(date.date),AvailableSlots(date.date)}}>
+                {date.date} 
+                {/* <br />
+                {selectedDate} */}
+              </button>
+            ))
+          )
+          :(
+          <p className="text-gray-500">No Dates.</p>
+        )
+        }
+      </div>
 
       {/* Display available slots */}
       <div className="grid grid-cols-3 gap-2 mt-4">
-        {currentSlot.slots.length > 0 ? (
-          currentSlot.slots.map((slot, index) => (
-            <button
-              key={index}
-              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-            >
-              {slot}
-            </button>
+        {availableSlots.length > 0 ? (
+          availableSlots.map((slot, index) => (
+            <button onClick={()=>{setSlotIndex(index),
+          setSlotTime(slot)}}
+      key={index} className={`px-4 py-2 border rounded-lg ${
+        slotIndex === index ? "bg-blue-600 text-white" : "bg-gray-200" }`}>
+      {slot}
+    </button>
           ))
         ) : (
           <p className="text-gray-500">No slots available.</p>
@@ -176,7 +298,7 @@ const ReAppointment = () => {
 
       {/* Navigation buttons */}
       <div className="flex justify-between mt-4">
-        <button
+        {/* <button
           onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
           disabled={currentIndex === 0}
           className={`px-4 py-2 rounded-lg ${currentIndex === 0 ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 text-white hover:bg-blue-600"}`}
@@ -190,11 +312,16 @@ const ReAppointment = () => {
           className={`px-4 py-2 rounded-lg ${currentIndex === availableSlots.length - 1 ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 text-white hover:bg-blue-600"}`}
         >
           Next
-        </button>
+        </button> */}
+        <button
+              onClick={bookAppointment}
+              className="mt-6 bg-primary text-white px-6 py-2 rounded-lg"
+            >
+              Book an Appointment
+            </button>
       </div>
     </div>
     </div>
   );
 }
-
 export default ReAppointment;

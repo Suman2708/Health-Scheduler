@@ -1,10 +1,12 @@
 import { useContext, useEffect, useState } from 'react'
 import {AppContext} from '../context/AppContext'
 import { toast } from 'react-toastify'
+import {  useNavigate } from 'react-router-dom'
 
 const Appointment = () => {
 
   const {backendUrl,token,getDoctors}= useContext(AppContext)
+  const navigate= useNavigate()
 
   const [appointments,setAppointments]=useState([])
   const months=["","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
@@ -23,16 +25,16 @@ const Appointment = () => {
           'authorization':`Bearer ${token}`
         }
       })
-      console.log(response)
+      // console.log(response)  
       if(!response.ok){
         const errorData = await response.json();
           throw new Error(errorData.message || 'Failed to fetch data');
       }
-      console.log(response)
+      // console.log(response)
       const data= await response.json()
       if(data.success){
         toast.success(data.message)
-        console.log(data.appointments)
+        // console.log(data.appointments)
         setAppointments(data.appointments.reverse())
         
       }
@@ -63,7 +65,7 @@ const Appointment = () => {
           const errorData = await response.json();
             throw new Error(errorData.message || 'Failed to fetch data');
         }
-        console.log(response)
+        // console.log(response)
         const data= await response.json()
         if(data.success){
           toast.success(data.message)
@@ -83,6 +85,55 @@ const Appointment = () => {
 
 
 
+  const initPay=(order)=>{
+    const options={
+      key: import.meta.env.VITE_RAZOR_KEY_ID,
+      amount: order.amount,
+      currency: order.currency,
+      name: 'Appointment Payment',
+      description: 'Appointment Payment',
+      order_id: order.id,
+      receipt: order.receipt,
+      handler: async(res)=>{
+        console.log(res);
+        try {
+          
+          const response= await fetch(`${backendUrl}/api/user/verify-payment`,{
+            method:'POST',
+            headers:{
+               'Content-Type': 'application/json',
+            'authorization':`Bearer ${token}`
+            },
+            body:JSON.stringify(res)
+          })
+          if(!response.ok){
+            const errorData = await response.json();
+              throw new Error(errorData.message || 'Failed to fetch data');
+          }
+          // console.log(response)
+          const data= await response.json()
+          if(data.success){
+            toast.success(data.message)
+           getUserAppointment()
+           navigate('/appointment')
+          //  getDoctors()
+            
+          }
+    
+          else{
+            toast.error(data.message)
+          }
+        } catch (error) {
+          toast.error(error.message)
+      console.log(error.message) 
+        }
+      } 
+    }
+    const rzp= new window.Razorpay(options)
+    rzp.open()
+  }
+
+
   const Payment=async(appointmentId)=>{
 
     try {
@@ -99,9 +150,11 @@ const Appointment = () => {
         const errorData = await response.json();
           throw new Error(errorData.message || 'Failed to fetch data');
       }
-      console.log(response)
+      // console.log(response)  
       const data= await response.json()
       if(data.success){
+        // console.log(data.order)
+        initPay(data.order)
         toast.success(data.message)
        getUserAppointment()
        getDoctors()
@@ -143,7 +196,8 @@ const Appointment = () => {
               </div>
               <div></div>
               <div className=' flex flex-col gap-2 justify-end'>
-               {!item.cancelled && !item.isCompleted && <button onClick={()=>Payment(item._id)} className=' text-sm  text-center sm:min-w-48 py-2 border hover:bg-primary text-black transition-all duration-300'>Pay Online</button>} 
+              {!item.cancelled && item.payment && <button className=' sm: mi-w-48 py-2 border rounded text-stone-500 bg-indigo-50'>Paid</button>}
+               {!item.cancelled && !item.isCompleted && !item.payment &&  <button onClick={()=>Payment(item._id)} className=' text-sm  text-center sm:min-w-48 py-2 border hover:bg-primary text-black transition-all duration-300'>Pay Online</button>} 
                {!item.cancelled && !item.isCompleted && <button onClick={()=>cancelAppointment(item._id)} className=' text-sm  text-center sm:min-w-48 py-2 border hover:bg-red-700 text-black transition-all duration-300'>Cancel Appointment</button>}
                {item.cancelled &&  !item.isCompleted &&<button className=' sm:min-w-48 py-2 border border-red-500 rounded text-red-500 '>Appointment Cancelled</button>} 
               </div>

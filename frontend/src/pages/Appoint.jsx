@@ -20,6 +20,7 @@ const Appoint = () => {
   const [reviews, setReview] = useState([]);
   const [unAvailableSlots,setUnAvailableSlots]=useState([]);
   const [visible,setVisible]=useState(false)
+  const [AgainAppointment,setAgainAppointment]=useState([]);
 
   useEffect(() => {
     const fetchedDoctor = doctors.find((doc) => doc._id === Id);
@@ -84,7 +85,7 @@ useEffect(() => {
         // console.log(data)
         if (data.success) {
           setUnAvailableSlots(data.slots || []);
-          console.log(data.slots)
+          // console.log(data.slots)
         } else {
           console.error("Error fetching unavailable slots:", data.message);
         }
@@ -204,8 +205,10 @@ useEffect(() => {
             const data = await response.json();
             // console.log(data)
             if (data.success) {
-              toast.success(data.message || "Click on Free Appointment to ReAppointment")
-              console.log(data.lastPaidAppointment.payment)
+              toast.success(data.message)
+              setAgainAppointment(data.lastPaidAppointment)
+              console.log(AgainAppointment)
+              // console.log(data.lastPaidAppointment.payment)
             } else {
               toast.success( data.message)
               // console.error("Error fetching unavailable slots:", data.message);
@@ -221,6 +224,13 @@ useEffect(() => {
       toast.error(error.message)
       }
   },[Id])
+
+
+
+  useEffect(() => {
+    console.log(AgainAppointment); // This will log the updated state when it changes
+  }, [AgainAppointment]);
+  
 
 
 
@@ -326,7 +336,13 @@ useEffect(() => {
             </button>
 
             <button
-              onClick={()=>navigate(`/ReAppointment?docId=${Id}`)}
+              onClick={() => {
+  if (AgainAppointment && Object.keys(AgainAppointment).length > 0) {
+    navigate(`/ReAppointment?docId=${Id}`);
+  } else {
+    toast.success("First book a paid appointment");
+  }
+}}
               className="mt-6 bg-primary text-white px-6 py-2 rounded-lg"
             >
               Free Appointment

@@ -15,6 +15,7 @@ import { DoctorContext } from './context/doctorContext';
 import DoctorDashboard from './pages/Doctor/doctorDashboard';
 import DoctorAppointment from './pages/Doctor/doctorAppointment';
 import DoctorProfile from './pages/Doctor/doctorProfile';
+import BookSimpleAppointment from './pages/Doctor/BookSimpleAppointment';
 
 const App = () => {
 
@@ -41,7 +42,7 @@ const App = () => {
           <Route path='/doctor-dashboard' element={<DoctorDashboard/>} />
           <Route path='/doctor-appointment' element={<DoctorAppointment/>} />
           <Route path='/doctor-profile' element={<DoctorProfile />} />
-
+          <Route path='/book-appointment' element={<BookSimpleAppointment />} />
         </Routes>
       </div>
     </div>
