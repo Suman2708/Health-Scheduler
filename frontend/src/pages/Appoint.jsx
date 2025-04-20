@@ -21,6 +21,7 @@ const Appoint = () => {
   const [unAvailableSlots,setUnAvailableSlots]=useState([]);
   const [visible,setVisible]=useState(false)
   const [AgainAppointment,setAgainAppointment]=useState([]);
+  const [payment,setPayment]=useState(false)
 
   useEffect(() => {
     const fetchedDoctor = doctors.find((doc) => doc._id === Id);
@@ -145,6 +146,10 @@ useEffect(() => {
       toast.warn("Please select a slot");
       return;
     }
+    if (payment!==true) {
+      toast.warn("Please select a slot");
+      return;
+    }
 
     try {
       const response = await fetch(`${backendUrl}/api/user/book-appointment`, {
@@ -153,7 +158,7 @@ useEffect(() => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ docId: Id, slotDate: selectedDate, slotTime }),
+        body: JSON.stringify({ docId: Id, slotDate: selectedDate, slotTime,payment }),
         
       });
 
@@ -232,6 +237,93 @@ useEffect(() => {
   }, [AgainAppointment]);
   
 
+
+
+
+
+  const initPay=(order)=>{
+    const options={
+      key: import.meta.env.VITE_RAZOR_KEY_ID,
+      amount: order.amount,
+      currency: order.currency,
+      name: 'Appointment Payment',
+      description: 'Appointment Payment',
+      order_id: order.id,
+      receipt: order.receipt,
+      handler: async(res)=>{
+        console.log(res);
+        try {
+          
+          const response= await fetch(`${backendUrl}/api/user/verify-payment`,{
+            method:'POST',
+            headers:{
+               'Content-Type': 'application/json',
+            'authorization':`Bearer ${token}`
+            },
+            body:JSON.stringify(res)
+          })
+          if(!response.ok){
+            const errorData = await response.json();
+              throw new Error(errorData.message || 'Failed to fetch data');
+          }
+          // console.log(response)
+          const data= await response.json()
+          if(data.success){
+            toast.success(data.message)
+            setPayment(data.payment)
+          //  navigate('/appointment')
+          //  getDoctors()
+            
+          }
+    
+          else{
+            toast.error(data.message)
+          }
+        } catch (error) {
+          toast.error(error.message)
+      console.log(error.message) 
+        }
+      } 
+    }
+    const rzp= new window.Razorpay(options)
+    rzp.open()
+  }
+
+
+  const Payment=async()=>{
+
+    try {
+        
+      const response= await fetch(`${backendUrl}/api/user/payment`,{
+        method:'POST',
+        headers:{
+           'Content-Type': 'application/json',
+        'authorization':`Bearer ${token}`
+        },
+        body:JSON.stringify({docId:Id})
+      })
+      if(!response.ok){
+        const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to fetch data');
+      }
+      // console.log(response)  
+      const data= await response.json()
+      if(data.success){
+        // console.log(data.order)
+        initPay(data.order)
+        toast.success(data.message)
+       getDoctors()
+        
+      }
+
+      else{
+        toast.error(data.message)
+      }
+    } catch (error) {
+      toast.error(error.message)
+    console.log(error.message)
+    }
+  }
 
 
 
@@ -327,6 +419,7 @@ useEffect(() => {
       )}
     </div>
   </div>
+  { <button onClick={()=>Payment()} className=' text-sm  text-center sm:min-w-48 py-2 border hover:bg-primary text-black transition-all duration-300'>Pay Online</button>}
 
             <button
               onClick={bookAppointment}

@@ -29,6 +29,7 @@ const Sidebar = () => {
                 <img src={assets.people_icon} alt="" />
                 <p className='text-black hidden md:block'>Doctors List</p>
             </NavLink> 
+           
         </ul>
     }
     {
@@ -48,6 +49,10 @@ const Sidebar = () => {
             <NavLink  className={({isActive})=>`flex items-center gap-3 py-3.5 px-3 md:px9 md:min-w-72 cursor-pointer ${isActive? 'bg-[#F2F3FF] border-r-4 border-blue-500':''}`} to={'/book-appointment'} >
                 <img src={assets.add_icon} alt="" />
                 <p className='text-black hidden md:block'>Book Appointment</p>
+            </NavLink> 
+            <NavLink  className={({isActive})=>`flex items-center gap-3 py-3.5 px-3 md:px9 md:min-w-72 cursor-pointer ${isActive? 'bg-[#F2F3FF] border-r-4 border-blue-500':''}`} to={'/search-patient'} >
+                <img src={assets.add_icon} alt="" />
+                <p className='text-black hidden md:block'>Search Patient</p>
             </NavLink> 
         </ul>
     }

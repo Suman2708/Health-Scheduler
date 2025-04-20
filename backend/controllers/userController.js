@@ -496,7 +496,7 @@ const reAppointment=async(req,res)=>{
         });
         // console.log(lastPaidAppointment.slotDate)
         // console.log(lastPaidAppointment.previous_date)
-      if(lastPaidAppointment.previous_date){
+      if(lastPaidAppointment){
                 const [year, month, day] = lastPaidAppointment.previous_date.split("-").map(Number);
         const slotDate = new Date(year, month - 1, day);  // Month should be zero-based
 
@@ -533,11 +533,15 @@ const today = new Date();
 // ---------------Api to Book Appointment-------------
 const bookAppointment = async (req, res) => {
     try {
-      const { userId, docId, slotDate, slotTime } = req.body;
+      const { userId, docId, slotDate, slotTime,payment } = req.body;
   
       const docData = await doctorModel.findById(docId).select("-password");
       if (!docData.available) {
         return res.json({ success: false, message: "Doctor not available" });
+      }
+
+      if(payment!==true){
+        return res.json({success:false,message:"Please Do the Payment First"})
       }
 
       const appointment=await appointmentModel.findOne({userId,docId,isCompleted: false,cancelled:false});
@@ -578,7 +582,8 @@ const bookAppointment = async (req, res) => {
         docData,
         amount: docData.fees,
         slotTime,
-        slotDate: formattedDate, 
+        slotDate: formattedDate,
+        payment:true, 
         date: new Date(), 
       };
   
@@ -832,20 +837,21 @@ const razorpayInstance = new Razorpay({
 // ------------- API to make online payments -------------
 const payment = async (req, res) => {
   try {
-    const { appointmentId } = req.body;
+    const { userId,docId } = req.body;
 
     // Fetch appointment data
-    const appointmentData = await appointmentModel.findById(appointmentId);
+    // const appointmentData = await appointmentModel.findById(appointmentId);
 
-    if (!appointmentData || appointmentData.cancelled) {
-      return res.json({ success: false, message: 'Appointment cancelled or not found' });
-    }
+    // if (!appointmentData || appointmentData.cancelled) {
+    //   return res.json({ success: false, message: 'Appointment cancelled or not found' });
+    // }
+    const docData= await doctorModel.findById(docId);
 
     // Creating options for Razorpay order
     const options = {
-      amount: appointmentData.amount * 100, // amount in paise
+      amount: docData.fees * 100, // amount in paise
       currency: process.env.CURRENCY || 'INR',
-      receipt: appointmentId
+      receipt: userId
     };
 
     // ⚠️ Wait for the order to be created
@@ -881,8 +887,8 @@ const verifyPayment=async(req,res)=>{
     console.log(orderInfo)
 
     if(orderInfo.status==='paid'){
-      await appointmentModel.findByIdAndUpdate(orderInfo.receipt,{payment:true})
-      res.json({success:true,message:"Payment Successful"})
+      // await appointmentModel.findByIdAndUpdate(orderInfo.receipt,{payment:true})
+      res.json({success:true,message:"Payment Successful",payment:true})
     }else{
       res.json({success:false,message:"Payment Failed"})
     }

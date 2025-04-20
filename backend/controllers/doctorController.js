@@ -134,7 +134,7 @@ const completeAppointment = async (req, res) => {
     // Mark appointment as completed
     await appointmentModel.findByIdAndUpdate(appointmentId, { isCompleted: true });
     const token = jwt.sign({ userId, docId }, secretKey, { expiresIn: "24h" });
-    console.log(token)
+    // console.log(token)
     // Fetch user details
     const userData = await userModel.findById(appointmentData.userId);
     if (!userData) {
@@ -267,7 +267,180 @@ const updateDoctor=async(req,res)=>{
 
 
 
+
+// ------- controller for finding the unavailable slots -----------------
+
+const UnAvailableSlots = async (req, res) => {
+    try {
+        const {docId}=req.body
+        const { date } = req.query;
+
+        const docData = await doctorModel.findById(docId).select("slots_booked");
+        if (!docData) {
+            return res.status(404).json({ success: false, message: "Doctor not found" });
+        }
+
+        let formattedDate;
+
+        if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            formattedDate = date; // Use as is if already in correct format
+        } else {
+            const parsedDate = new Date(date);
+            if (isNaN(parsedDate.getTime())) {
+                return res.status(400).json({ success: false, message: "Invalid date format" });
+            }
+
+            // Convert to local time before formatting to YYYY-MM-DD
+            parsedDate.setMinutes(parsedDate.getMinutes() + parsedDate.getTimezoneOffset());
+
+            formattedDate = parsedDate.toISOString().split("T")[0]; // Extract YYYY-MM-DD
+        }
+
+        // console.log("Formatted Date Key:", formattedDate);
+
+        const slots = docData.slots_booked[formattedDate];
+        // console.log(slots)
+        res.json({ success: true, message: "Slots available", slots });
+
+    } catch (error) {
+        console.error("Fetch Error:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+
+
+
+
 // ---------  Controller for  booking of the doctor by doctor personal assitant  ------------
+
+const bookAppointment = async (req, res) => {
+  try {
+    const { name, phone, docId, slotDate, slotTime } = req.body;
+
+    // 🔍 Step 1: Check if user already exists by phone
+    let userData = await userModel.findOne({ phone });
+
+    if (!userData) {
+      // 🧾 Step 2: Create new user
+      userData = new userModel({ name, phone });
+      await userData.save();
+    }
+
+    // 🪙 Step 3: Generate JWT token
+    const token = jwt.sign({ id: userData._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+
+    const docData = await doctorModel.findById(docId).select("-password");
+    if (!docData?.available) {
+      return res.json({ success: false, message: "Doctor not available" });
+    }
+
+    // ⛔ Step 4: Prevent duplicate appointments
+    const existingAppointment = await appointmentModel.findOne({
+      userId: userData._id,
+      docId,
+      isCompleted: false,
+      cancelled: false,
+    });
+
+    if (existingAppointment) {
+      return res.json({ success: true, message: "Slots Already Booked" });
+    }
+
+    let slots_booked = docData.slots_booked;
+
+    // ✅ Step 5: Format date and check slot
+    let correctDate = new Date(slotDate);
+    correctDate.setMinutes(correctDate.getMinutes() - correctDate.getTimezoneOffset());
+    let formattedDate = correctDate.toISOString().split("T")[0];
+
+    if (slots_booked[formattedDate]) {
+      if (slots_booked[formattedDate].includes(slotTime)) {
+        return res.json({ success: false, message: "Slot not available" });
+      } else {
+        slots_booked[formattedDate].push(slotTime);
+      }
+    } else {
+      slots_booked[formattedDate] = [slotTime];
+    }
+
+    delete docData.slots_booked;
+
+    const appointmentData = {
+      userId: userData._id,
+      docId,
+      userData,
+      docData,
+      amount: docData.fees,
+      slotTime,
+      slotDate: formattedDate,
+      date: new Date(),
+    };
+
+    const newAppointment = new appointmentModel(appointmentData);
+    await newAppointment.save();
+
+    await doctorModel.findByIdAndUpdate(docId, { slots_booked });
+
+    return res.json({
+      success: true,
+      message: "Appointment Booked",
+      token, // 🔐 Send token back
+    });
+
+  } catch (error) {
+    console.error("Booking Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+
+
+
+
+// --------  Controller to search the patient whether it  has booked any appointment with this doctor or not --------
+const searchPatient = async (req, res) => {
+    const { name, phone} = req.body;
+    const {docId}=req.body;
+    // console.log(name,phone,o)
+
+    // Validate input data before querying the database
+    if (!name || !phone || !docId) {
+        return res.status(400).json({
+            success: false,
+            message: "Missing required fields: name, phone, or docId",
+        });
+    }
+
+    try {
+        const patient0= await userModel.findOne({name,phone});
+        console.log(patient0)
+        const patient = await appointmentModel.find({
+            // patient0._id,
+            docId
+        });
+        console.log(patient)
+
+        if (patient) {
+            return res.json({
+                success: true,
+                patient
+            });
+        } else {
+            return res.json({
+                success: false,
+                message: "No patient found with the given details"
+            });
+        }
+    } catch (error) {
+        console.error("Booking Error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "An error occurred while searching for the patient"
+        });
+    }
+};
 
 
 
@@ -278,5 +451,6 @@ export {changeAvailability,doctorList,
     doctorLogin,appointmentsDoctor,
     completeAppointment,cancelAppointment,
     doctorDashboard,doctorProfile,
-    updateDoctor
+    updateDoctor,bookAppointment,UnAvailableSlots,
+    searchPatient
 }
